@@ -9,7 +9,7 @@ public class FolioFormatterTests
     // escribirlos es parte del taller.
     [Theory]
     [InlineData(123, "STGO", "PED-STGO-000123")]
-    [InlineData(1, "VAL", "PED3231ed-VAL-000001")]
+    [InlineData(1, "VAL", "PED-VAL-000001")]
     [InlineData(999999, "CO", "PED-CO-999999")]
     public void FormatearFolio_CasosBase_DevuelveElFolioEsperado(int numero, string sucursal, string esperado)
     {
