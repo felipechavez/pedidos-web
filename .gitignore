@@ -1,0 +1,9 @@
+# Basura del sistema y de herramientas
+*.stackdump
+.DS_Store
+Thumbs.db
+# Salida de compilación .NET (respaldo de los .gitignore de cada proyecto)
+bin/
+obj/
+
+.vs/

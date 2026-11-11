@@ -1,0 +1,119 @@
+﻿@host = http://localhost:5080
+
+# Pedidos Web · Casos de uso documentados
+#
+# Levanta la API antes de ejecutar:  dotnet run --project src/PedidosWeb.Api
+# Puerto según Properties/launchSettings.json.
+#
+# Fuentes:
+#   - HU-01 · specs/HU-01-listar-pedidos/spec.md (Unidad 2)
+#   - HU-02 · specs/HU-02-detalle-pedido/spec.md (Unidad 3)
+
+### ============================================================
+### Salud y consulta por id (Unidad 2)
+### ============================================================
+
+### API arriba → 200 { "estado": "ok" }
+# @name salud
+GET {{host}}/salud
+
+### Pedido por id → 200 con la cabecera del pedido 8 (no cambia con la HU-02)
+# @name pedidoPorId
+GET {{host}}/api/pedidos/8
+
+### Pedido por id inexistente → 404
+# @name pedidoPorIdInexistente
+GET {{host}}/api/pedidos/999
+
+
+### ============================================================
+### HU-01 · Listar pedidos con filtros
+### ============================================================
+
+### CA-1 · Sin filtros → 200, primeros 10 de 45 por fecha desc, totalPaginas 5
+# @name hu01SinFiltros
+GET {{host}}/api/pedidos
+
+### CA-2 · Cliente por código → 200, 5 pedidos de Ferretería El Clavo (8, 16, 24, 32, 40)
+# @name hu01ClientePorCodigo
+GET {{host}}/api/pedidos?cliente=C-001
+
+### CA-3 · Cliente por nombre parcial sin distinguir mayúsculas → 200, los mismos 5 pedidos
+# @name hu01ClientePorNombreParcial
+GET {{host}}/api/pedidos?cliente=clavo
+
+### CA-4 · Estado → 200, 5 pendientes (9, 18, 27, 36, 45)
+# @name hu01EstadoPendiente
+GET {{host}}/api/pedidos?estado=Pendiente
+
+### CA-5 · Rango de fechas inclusivo → 200, solo pedidos entre el 1 y el 15 de octubre de 2026 (10 con los datos de ejemplo)
+# @name hu01RangoFechas
+GET {{host}}/api/pedidos?fechaDesde=2026-10-01&fechaHasta=2026-10-15
+
+### CA-6 · Filtros combinados (AND) → 200, solo el pedido 5 (Minimarket Doña Rosa, Confirmado)
+# @name hu01ClienteYEstado
+GET {{host}}/api/pedidos?cliente=C-002&estado=Confirmado
+
+### CA-7 · Segunda página → 200, pagina 2 con 10 registros
+# @name hu01Pagina2
+GET {{host}}/api/pedidos?pagina=2
+
+### CA-8 · Estado inválido → 400 ProblemDetails (RFC 9457)
+# @name hu01EstadoInvalido
+GET {{host}}/api/pedidos?estado=Invalido
+
+### CA-9 · Filtros sin resultados → 200, datos vacío, totalRegistros 0
+# @name hu01SinResultados
+GET {{host}}/api/pedidos?cliente=C-001&estado=Pendiente
+
+### CA-10 · Página 0 → 400
+# @name hu01Pagina0
+GET {{host}}/api/pedidos?pagina=0
+
+### CA-11 · Tamaño de página no permitido (50) → 400
+# Parámetro tamañoPagina, con la ñ codificada para la URL.
+# @name hu01TamanoPagina50
+GET {{host}}/api/pedidos?tama%C3%B1oPagina=50
+
+### RN-6 · Tamaño de página permitido (20) → 200, 20 registros, totalPaginas 3
+# @name hu01TamanoPagina20
+GET {{host}}/api/pedidos?tama%C3%B1oPagina=20
+
+### RN-6 · Página mayor al total de páginas → 400
+# @name hu01PaginaFueraDeRango
+GET {{host}}/api/pedidos?pagina=6
+
+### RN-3 · Fechas invertidas (desde > hasta) → 400
+# @name hu01FechasInvertidas
+GET {{host}}/api/pedidos?fechaDesde=2026-10-15&fechaHasta=2026-10-01
+
+### Errores esperados · Fecha con formato inválido → 400
+# @name hu01FechaFormatoInvalido
+GET {{host}}/api/pedidos?fechaDesde=15-10-2026
+
+### RN-7 · Ordenar por total ascendente → 200, pedidos de menor a mayor total
+# @name hu01OrdenarPorTotal
+GET {{host}}/api/pedidos?ordenarPor=total&ascendente=true
+
+### RN-7 · Campo de orden inválido → 400
+# @name hu01OrdenInvalido
+GET {{host}}/api/pedidos?ordenarPor=color
+
+
+### ============================================================
+### HU-02 · Detalle de un pedido
+### ============================================================
+
+### CA-01 + CA-02 · Detalle del pedido 8 → 200
+#   folio PED-STGO-000008, estado Entregado, cliente C-001 (Ferretería El Clavo),
+#   3 líneas ordenadas por número con su subtotal, total 120100 (CLP, sin IVA)
+# @name hu02DetallePedido8
+GET {{host}}/api/pedidos/8/detalle
+
+### CA-03 · Detalle de un pedido inexistente → 404
+# @name hu02DetalleInexistente
+GET {{host}}/api/pedidos/999/detalle
+
+### Restricción · Un id no numérico no calza con la ruta {id:int} → 404
+# @name hu02DetalleIdNoNumerico
+GET {{host}}/api/pedidos/abc/detalle
