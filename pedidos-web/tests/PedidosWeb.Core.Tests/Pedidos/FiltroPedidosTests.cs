@@ -58,4 +58,36 @@ public class FiltroPedidosTests
         Assert.Contains("'desde' (2026-03-31) no puede ser mayor que la fecha 'hasta' (2026-03-01)", ex.Message);
         Assert.Equal("desde", ex.ParamName);
     }
+
+    // Contrato: lista nula se rechaza
+    [Fact]
+    public void EntreFechas_PedidosNulo_LanzaArgumentNullException()
+    {
+        var ex = Assert.Throws<ArgumentNullException>(() => FiltroPedidos.EntreFechas(null!, Desde, Hasta));
+
+        Assert.Equal("pedidos", ex.ParamName);
+    }
+
+    // Límite: lista vacía
+    [Fact]
+    public void EntreFechas_ListaVacia_DevuelveListaVacia()
+    {
+        var resultado = FiltroPedidos.EntreFechas([], Desde, Hasta);
+
+        Assert.Empty(resultado);
+    }
+
+    // Límite: rango de un solo día (desde == hasta es válido)
+    [Fact]
+    public void EntreFechas_DesdeIgualAHasta_IncluyeSoloPedidosDeEseDia()
+    {
+        var dia = new DateOnly(2026, 3, 15);
+        var diaAnterior = CrearPedido(1, dia.AddDays(-1));
+        var delDia = CrearPedido(2, dia);
+        var diaSiguiente = CrearPedido(3, dia.AddDays(1));
+
+        var resultado = FiltroPedidos.EntreFechas([diaAnterior, delDia, diaSiguiente], dia, dia);
+
+        Assert.Equal([delDia], resultado);
+    }
 }
