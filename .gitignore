@@ -7,3 +7,6 @@ bin/
 obj/
 
 .vs/
+
+# Copia de main y diff que usa el subagente revisor (ver .claude/agents/revisor.md)
+.revision/

@@ -1,0 +1,89 @@
+# Revisión automática de PR con Claude · usa el subagente `revisor`.
+# Basado en el ejemplo oficial de revisión de PR de claude-code-action (code.claude.com/docs/en/github-actions).
+# Reglas del curso (U6): permisos mínimos, timeout, versiones fijas por SHA y el token solo como secreto.
+# Las reglas (AGENTS.md, REVIEW.md) y el subagente se toman SIEMPRE de main:
+# un PR no puede cambiar las reglas con las que se revisa a sí mismo.
+# Claude comenta; no aprueba, no edita y no hace merge.
+name: Claude review
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+# Un push nuevo al PR cancela la revisión anterior.
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  revisar:
+    name: Revisión con el subagente revisor
+    # Sin borradores, y sin PR desde forks (no reciben el secreto).
+    if: ${{ !github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write   # publicar el comentario de revisión
+      id-token: write        # la acción lo usa para obtener el token de la Claude GitHub App
+
+    steps:
+      - name: Obtener el código del PR
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          fetch-depth: 2   # el merge del PR y sus padres, para calcular el diff
+          persist-credentials: false
+
+      - name: Obtener las reglas desde main
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: main
+          path: .revision/main
+          fetch-depth: 1
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            pedidos-web/AGENTS.md
+            pedidos-web/REVIEW.md
+            .claude/agents/revisor.md
+
+      - name: Preparar la revisión
+        id: preparar
+        run: |
+          faltan=""
+          for f in pedidos-web/AGENTS.md pedidos-web/REVIEW.md .claude/agents/revisor.md; do
+            [ -f ".revision/main/$f" ] || faltan="$faltan $f"
+          done
+          if [ -n "$faltan" ]; then
+            echo "::notice::main todavía no tiene:$faltan. Se omite la revisión de Claude."
+            echo "listo=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Se usa el subagente de main, no el que trae el PR.
+          mkdir -p .claude/agents
+          cp .revision/main/.claude/agents/revisor.md .claude/agents/revisor.md
+          # HEAD es el merge del PR sobre main: HEAD^1 es main, así que el diff es solo lo que aporta el PR.
+          git diff HEAD^1 HEAD > .revision/pr.diff
+          echo "listo=true" >> "$GITHUB_OUTPUT"
+
+      - name: Revisar con Claude
+        if: steps.preparar.outputs.listo == 'true'
+        uses: anthropics/claude-code-action@4fa93a88de49bbef68b10eb15aabedf28ca0e1ed # v1.0.271
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR: ${{ github.event.pull_request.number }}
+
+            Usa el subagente `revisor` para revisar este pull request.
+            El diff está en .revision/pr.diff y las reglas de main en .revision/main/.
+            Publica la respuesta del subagente, sin agregar ni quitar hallazgos,
+            como un único comentario del PR usando `gh pr comment`.
+          claude_args: >-
+            --max-turns 15
+            --allowedTools "Agent,Read,Grep,Glob,Bash(gh pr comment:*)"
+            --disallowedTools "Edit,Write,NotebookEdit"
