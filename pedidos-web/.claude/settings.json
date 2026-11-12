@@ -4,7 +4,10 @@
     "deny": [
       "Edit(legado/**)",
       "Read(**/.env)",
-      "Read(**/*.pem)"
+      "Read(**/*.pem)",
+      "Edit(**/.claude/settings.json)",
+      "Edit(**/.claude/settings.local.json)",
+      "Edit(**/.claude/hooks/**)"
     ],
     "ask": [
       "Bash(curl:*)",
@@ -22,7 +25,7 @@
       {
         "matcher": "Read|Grep|Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
         "hooks": [
-          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guardian.sh\"" }
+          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guardian.sh\"", "onFailure": "block" }
         ]
       }
     ],

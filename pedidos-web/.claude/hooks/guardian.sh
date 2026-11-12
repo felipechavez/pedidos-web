@@ -6,6 +6,8 @@
 # Bash o PowerShell (por ejemplo `cat .env` o `Get-Content clave.pem`); este
 # hook sí lo revisa.
 #
+#   - Tocar la config de Claude: .claude/settings*.json,
+#     .claude/hooks/ o la carpeta .claude entera (edición o shell) -> deny
 #   - Leer .env o *.pem (Read, Grep, Bash, PowerShell)      -> deny
 #   - curl, wget, Invoke-WebRequest / iwr (Bash, PowerShell) -> ask
 #   - Tocar migracion/golden-master.csv (edición o shell)    -> ask
@@ -41,6 +43,16 @@ responder() { # $1 = deny | ask, $2 = motivo (sin comillas dobles)
 re_secreto='(^|[^[:alnum:]_.-])\.env($|[^[:alnum:]_.-])|\.pem($|[^[:alnum:]_])'
 re_red='(^|[^[:alnum:]_-])(curl|wget|invoke-webrequest|iwr)($|[^[:alnum:]_-])'
 re_golden='migracion/+golden-master\.csv'   # /+ : en JSON crudo \\ queda como //
+# settings.json, settings.local.json, hooks/..., o la carpeta .claude sola (rm -rf .claude, mv .claude x)
+re_config='\.claude/+(settings(\.local)?\.json|hooks)|\.claude/*($|[^[:alnum:]_./-])'
+
+case "$herramienta" in
+  Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell)
+    if [[ $objetivo =~ $re_config ]]; then
+      responder deny "la configuracion de Claude (.claude/settings*.json, .claude/hooks/) solo la edita una persona, fuera de Claude."
+    fi
+    ;;
+esac
 
 case "$herramienta" in
   Read|Grep|Bash|PowerShell)
