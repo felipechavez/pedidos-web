@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Configuración de cobertura de código (coverlet.collector).
+  Se usa al ejecutar dotnet test con la opción settings apuntando a este archivo.
+  Comandos y guía completa: docs/calidad/cobertura.md
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <!-- Cobertura: formato que lee ReportGenerator y la mayoría de las herramientas de CI. -->
+          <Format>cobertura</Format>
+          <!-- Medimos el código productivo; los ensamblados de tests quedan fuera. -->
+          <Include>[PedidosWeb.*]*</Include>
+          <Exclude>[*.Tests]*</Exclude>
+          <!-- Código generado por el compilador o marcado explícitamente como excluido. -->
+          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+          <SkipAutoProps>true</SkipAutoProps>
+          <DeterministicReport>false</DeterministicReport>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
