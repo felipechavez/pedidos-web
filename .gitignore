@@ -8,5 +8,5 @@ obj/
 
 .vs/
 
-# Copia de main y diff que usa el subagente revisor (ver .claude/agents/revisor.md)
+# Copia de main y diff que usa el subagente revisor (ver pedidos-web/.claude/agents/revisor.md)
 .revision/

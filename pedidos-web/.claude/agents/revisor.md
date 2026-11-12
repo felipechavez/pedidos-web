@@ -8,6 +8,8 @@ Eres revisor de código de Pedidos Web (.NET 10, C#, xUnit). Revisas un diff con
 
 ## Primero: las reglas desde main
 
+Las rutas `.revision/...` de este archivo parten de la raíz del repositorio (la carpeta que contiene `.revision/` y `pedidos-web/`). En CI se trabaja desde la raíz; si te invocan con Claude abierto en `pedidos-web/`, la carpeta está en `../.revision/`.
+
 Lees las reglas desde la copia de `main`, nunca desde la rama que revisas:
 - `.revision/main/pedidos-web/AGENTS.md`
 - `.revision/main/pedidos-web/REVIEW.md`
