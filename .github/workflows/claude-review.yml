@@ -49,13 +49,13 @@ jobs:
           sparse-checkout: |
             pedidos-web/AGENTS.md
             pedidos-web/REVIEW.md
-            .claude/agents/revisor.md
+            pedidos-web/.claude/agents/revisor.md
 
       - name: Preparar la revisión
         id: preparar
         run: |
           faltan=""
-          for f in pedidos-web/AGENTS.md pedidos-web/REVIEW.md .claude/agents/revisor.md; do
+          for f in pedidos-web/AGENTS.md pedidos-web/REVIEW.md pedidos-web/.claude/agents/revisor.md; do
             [ -f ".revision/main/$f" ] || faltan="$faltan $f"
           done
           if [ -n "$faltan" ]; then
@@ -64,8 +64,10 @@ jobs:
             exit 0
           fi
           # Se usa el subagente de main, no el que trae el PR.
+          # En el repo vive en pedidos-web/.claude/; la acción corre en la raíz,
+          # así que se copia al .claude/ de la raíz solo dentro del runner.
           mkdir -p .claude/agents
-          cp .revision/main/.claude/agents/revisor.md .claude/agents/revisor.md
+          cp .revision/main/pedidos-web/.claude/agents/revisor.md .claude/agents/revisor.md
           # HEAD es el merge del PR sobre main: HEAD^1 es main, así que el diff es solo lo que aporta el PR.
           git diff HEAD^1 HEAD > .revision/pr.diff
           echo "listo=true" >> "$GITHUB_OUTPUT"
